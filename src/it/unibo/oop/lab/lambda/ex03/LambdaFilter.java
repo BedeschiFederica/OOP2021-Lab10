@@ -6,7 +6,11 @@ import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.awt.LayoutManager;
 import java.awt.Toolkit;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.StringTokenizer;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -35,23 +39,44 @@ public final class LambdaFilter extends JFrame {
     private static final long serialVersionUID = 1760990730218643730L;
 
     private enum Command {
-        IDENTITY("No modifications", Function.identity());
+        IDENTITY("No modifications", Function.identity()),
+        TO_LOWERCASE("To lowercase", String::toLowerCase),
+        COUNT_CHARS("Count chars", s -> Integer.toString(s.length())),
+        COUNT_LINES("Count lines", s -> Long.toString(s.chars().filter(c -> c == '\n').count() + 1)),
+        SORTED_WORDS("In alphabetical order",
+                s -> getListOfWords(s).stream().sorted().collect(Collectors.joining(" "))),
+        WORDS_COUNTS("Count for each word",
+                s -> getListOfWords(s).stream()
+                    .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()))
+                    .entrySet()
+                    .stream()
+                    .map(e -> e.getKey() + " -> " + e.getValue())
+                    .collect(Collectors.joining("\n")));
 
         private final String commandName;
         private final Function<String, String> fun;
 
         Command(final String name, final Function<String, String> process) {
-            commandName = name;
-            fun = process;
+            this.commandName = name;
+            this.fun = process;
+        }
+
+        private static List<String> getListOfWords(final String s) {
+            final List<String> strings = new ArrayList<>();
+            final StringTokenizer tokenizer = new StringTokenizer(s, " \n\t", false);
+            while (tokenizer.hasMoreTokens()) {
+                strings.add(tokenizer.nextToken());
+            }
+            return strings;
         }
 
         @Override
         public String toString() {
-            return commandName;
+            return this.commandName;
         }
 
         public String translate(final String s) {
-            return fun.apply(s);
+            return this.fun.apply(s);
         }
     }
 
